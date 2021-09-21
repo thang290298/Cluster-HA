@@ -12,7 +12,7 @@ IV. [Mô hình triển khai](#mohinh)
 ## I. <a name="tongquan"></a>Tổng quan
 
 ### 1. Pacemaker
-- **`Pacemaker`**: là trình quản lý tài nguyên bên trong `Cluster` được phát triển bởi **ClusterLabs**.`Pacemaker` tương thích với rất nhiều dịch vụ phổ biến hiện có và hoàn toàn có thể tự phát triển module để quản lý các tài nguyên mà pacemaker chưa hỗ trợ
+- **`Pacemaker`**: là trình quản lý tài nguyên bên trong `Cluster` được phát triển bởi **ClusterLabs**. `Pacemaker` tương thích với rất nhiều dịch vụ phổ biến hiện có và hoàn toàn có thể tự phát triển module để quản lý các tài nguyên mà pacemaker chưa hỗ trợ
 - Kiến trúc triển khai bới `Pacemaker` cho phép tùy biến, hỗ trợ tối đa để các tài nguyên (`resource`) thuộc cluster luôn sẵn sàng. Đồng thời pacemaker có khả năng phát hiện phục hồi các tài nguyên, các node đang xảy ra sự cố thông qua các **`engine`** hỗ trợ (`Corosync, Heartbeat`), cho phép tùy biến tùy theo các kiến trúc khác nhau.
 
 - Các tính năng chính:
