@@ -7,7 +7,6 @@ Phần II. [Chuẩn bị](#chuanbi)
 
   1. [Phân hoạch](#phanhoach)
   2. [Mô hình triển khai](#mohinhtrienkhai)
-  3. [Mô hình hoạt động](#mohinhhoatdong)
 
 Phần III. [Triển khai](#trienkhai)
 
@@ -25,11 +24,11 @@ Phần V. [Kiểm tra hệ thống](#kiemtra)
 
 
 ## Phần I. <a name="tongquan"></a>Tổng quan
-**`HAProxy`** là viết tắt của High Availability Proxy, là một công cụ mã nguồn mở nổi tiếng ứng dụng cho giải pháp cân bằng tải `TCP/HTTP` cũng như giải pháp máy chủ Proxy (Proxy Server). HAProxy có thể hoạt động trên các môi trường Linux, Solaris, FreeBSD. Công dụng phổ biến nhất của HAProxy là cải thiện hiệu năng, tăng độ tin cậy của hệ thống bằng cách phân chia khối lượng công việc trên nhiều máy chủ như:Web, App, cơ sở dữ liệu,... HAproxy hiện đã và đang được sử dụng bới nhiều Website lớn như GoDaddy, GitHub, Bitbucket, Stack Overflow, Reddit, Speedtest, Twitter và trong nhiều sản phẩm cung cấp bởi `Amazon Web Service.`
+**`MariaDB`** là một sản phẩm mã đóng tách ra từ mã mở do cộng đồng phát triển của hệ quản trị cơ sở dữ liệu quan hệ `MySQL` nhằm theo hướng không phải trả phí với `GNU GPL`. MariaDB được phát triển từ sự dẫn dắt của những nhà phát triển ban đầu của `MySQL`, do lo ngại khi `MySQL` bị `Oracle Corporation` mua lại. Những người đóng góp được yêu cầu chia sẽ quyền tác giả của họ với **`MariaDB Foundation`**.
 
-**`MariaDB Galera Cluster`** là giải pháp sao chép và động bộ nâng cao tính năng sẵn sàng cho `MariaDB`. `Galera` hỗ trợ chế độ `Actie-Active` có nghĩa là có thể truy cập, ghi dữ liệu đồng thời trên tất cả các Node MariaDB thuộc Galera Cluster.
+**`MariaDB`** được định hướng để duy trì khả năng tương thích cao với `MySQL`, để đảm bảo khả năng hỗ trợ về thư viện đồng thời kết hợp một cách tốt nhất với các API và câu lệnh của `MySQL`. `MariaDB` đã có công cụ hỗ lưu trữ `XtraDB` thay cho `InnoDB`.
 
-**`Pacemaker`** là trình quản lý tài nguyên trong Cluster được phát triển bởi `ClusterLabs`. Pacemaker tương thích với nhiều dịch vụ phổ biến hiện có à hoàn toàn có thể tự phát triển module để quản lý các tài nguyên mà hiện tại Pacemaker chưa hỗ trợ.
+**`MariaDB Galera Cluster`** là giải pháp sao chép đồng bộ nâng cao tính sẵn sàng cho MariaDB. Galera hỗ trợ chế độ `Active-Active` tức có thể truy cập, ghi dữ liệu đồng thời trên tất các node MariaDB thuộc `Galera Cluster`.
 
 
 # Phần II. <a name="chuanbi"></a>Chuẩn bị
@@ -43,9 +42,6 @@ Phần V. [Kiểm tra hệ thống](#kiemtra)
 
 ## 2. <a name="mohinhtrienkhai"></a>Mô hình triển khai
 <h3 align="center"><img src="../../Images/Lab/1.png"></h3>
-
-## 3. <a name="mohinhhoatdong"></a>Mô hình hoạt động
-<h3 align="center"><img src="../../Images/Lab/2.png"></h3>
 
 # Phần III. <a name="trienkhai"></a>Triển khai
 ## 1. <a name="3.1"></a>Thiết lập ban đầu
