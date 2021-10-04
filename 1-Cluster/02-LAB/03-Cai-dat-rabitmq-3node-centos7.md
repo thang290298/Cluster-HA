@@ -1,4 +1,4 @@
-<h1 align="center">Hướng dẫn triển khai Haproxy Pacemaker cho Cluster Galera 3 node trên CentOS 7</h1>
+<h1 align="center">Hướng dẫn Cài đặt rabitmq 3 node CentOS7</h1>
 
 # Mục Lục
 Phần I. [Chuẩn bị](#chuanbi)
