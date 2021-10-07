@@ -1,4 +1,4 @@
-<h1 align="center">Hướng dẫn triển khai Haproxy Pacemaker cho Cluster Galera 3 node trên CentOS 7</h1>
+<h1 align="center">Hướng dẫn triển khai Haproxy Pacemaker cho Cluster Galera 3 node Apache trên CentOS 7</h1>
 
 # Mục Lục
 Phần I. [Tổng quan](#tongquan)
@@ -13,7 +13,7 @@ Phần II. [Chuẩn bị](#chuanbi)
 
 Phần III. [Thiết lập ban đầu](#thietlap)
 
-Phần IV. [Cài đặt Galera Database 3 Node Wordpress ](#installGaleraDatabaseWordpress)
+Phần IV. [Cài đặt Galera Database 3 Node Wordpress (Apache) ](#installGaleraDatabaseWordpress)
   1. [Cài đặt Haproxy bản 2.2.3](#4.1)
   2. [Cài đặt Cluster Pacemaker](#4.2)
   3. [Cài đặt web server wordpress](#4.3)
