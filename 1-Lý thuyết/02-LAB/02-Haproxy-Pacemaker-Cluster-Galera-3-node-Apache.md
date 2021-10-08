@@ -625,6 +625,9 @@ systemctl restart haproxy
 pcs resource restart Loadbalancer_HaProxy
 ```
 
+
+
+
 ## Phần VI. <a name="6"></a>Một số lưu ý
 
 - Mô hình trên Mysql bind qua `IP public` tới các `IP Public` của các `node client`
