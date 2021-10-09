@@ -151,3 +151,132 @@ câu lệnh trên sẽ tạo ra một resource group có tên là `Web`. Và cá
 Vì vậy, nếu:
 - `Virtual_IP` không thể chạy ở bất cứ trên node nào đó thì `Web_Cluster` cũng không thể hoạt động
 - `Web_Cluster` không thể hoạt động ở bất cứ đâu thì `Virtual_IP` chưa chắc đã không hoạt động được
+
+## 6. vận hành các resource 
+- Để đảm các resource hoạt đông một các ổn định nhất, có thế thực hiện các hoạt động giám sát tới 1 định nghĩa của resource . Nếu không khai báo hoạt động giám sát cho 1 resource, mặc định nó sẽ được tạo ra với 1 khoảng thời gian lặp lại giám sát được quy định bởi resource agents. Nếu resource không cung cấp khoảng thời gian giám sát mặc định thì hoạt động giám sát được tạo ra tạo ra với khoảng thời gian là 60S
+- Các thuộc tính hoạt động giám sát bao gồm
+
+| Meta options | Mô tả |
+|--------------|-------|
+| id | Giá trị đại diện à là duy nhất cho hành động giám sát|
+| name | Hành động thực thi, bao gồm: `monitor`,`start`,`stop`|
+| interval | Quy định thời gian thực thi hành động giám sát. Default = 0 |
+| timeout | Quy định thời gian chờ trước khi quyết đinh hoạt động giám sát bị lỗi. |
+| on-fail | Hành động thực thi mà hoạt động giám sát luôn bị thất bại với các giá trị cho phép như sau:: <br><ul><li>`ignore`: Bỏ qua việc hoạt động bị lỗi. Nói các khác: xem như chưa xảy ra vấn đề gì</li><li>`Block`: Không thực hiện thêm bất kỳ hành động nào trên hệ thống</li><li>`Stop`: Dừng resource lại và không tiến hành khởi động trên bất kỳ node nào thuộc cluster</li><li>`Restart`: thực hiện khởi động lại resource</li><li>`Fence`: `STONITH` trên node mà resource đó bị lỗi </li><li>`Standby`: Di chuyển tất cả resource ra khỏi node có resource bị lỗi</li></ul> |
+| enable| Nếu giá trị thiết lập là `false` thì hoạt động gián sát sẽ được xem như chưa hề tồn tại. Có thể có 2 giá trị là `true` hoặc `false`|
+
+- Ví dụ:
+  - Ta đã từng thực hiện tạo 1 `resource` như sau:
+  ```sh
+  pcs resource create Virtual_IP ocf:heartbeat:IPaddr2 ip=10.10.13.30 cidr_netmask=24 op monitor interval=30s
+  ```
+  - Tuy nhiên có thể thêm các tùy chọn ngay sau khi tạo resource :
+  ```sh
+  pcs resource op add resource_id operation_actions operation_properties
+  ```
+  - trong đó:
+    - operation_actions: là các giá trị: `monitor`, `start`, `stop`
+    - operation_properties: là các giá trị được cho theo bảng bên trên, ví dụ: `interval`, `fence`, ...
+  - Có thể thiết lập các biến đó với giá trị mặc định mà mình đã quy định:
+  ```sh
+  pcs resource op defaults [options]
+  ```
+  - Ví dụ cụ thể
+  ```sh
+  pcs resource op defaults timeout=240s
+  ```
+
+## 7. Hiển thị cấu hình của resource
+
+### Liệt kê danh sách tất cả **`Resource`**
+```sh
+pcs resource show
+```
+  -  Kết quả:
+  ```sh
+  [root@MariaDB-3 ~]# pcs resource show
+  Virtual_IP     (ocf::heartbeat:IPaddr2):       Started MariaDB-1
+  Loadbalancer_HaProxy   (systemd:haproxy):      Started MariaDB-1
+  Virtual_IP2    (ocf::heartbeat:IPaddr2):       Stopped
+  [root@MariaDB-3 ~]#
+  ```
+### Sử dụng câu lệnh sau để hiện thị tất cả những gì liên quan tới resource:
+```sh
+pcs resource show --full
+```
+  - Kết quả:
+  ```sh
+  [root@MariaDB-3 ~]# pcs resource show --full
+  Resource: Virtual_IP (class=ocf provider=heartbeat type=IPaddr2)
+  Attributes: cidr_netmask=24 ip=10.10.13.30
+  Meta Attrs: resource-stickiness=69
+  Operations: monitor interval=30s (Virtual_IP-monitor-interval-30s)
+              start interval=0s timeout=20s (Virtual_IP-start-interval-0s)
+              stop interval=0s timeout=20s (Virtual_IP-stop-interval-0s)
+  Resource: Loadbalancer_HaProxy (class=systemd type=haproxy)
+  Operations: monitor interval=5s timeout=5s (Loadbalancer_HaProxy-monitor-interval-5s)
+              start interval=0s timeout=100 (Loadbalancer_HaProxy-start-interval-0s)
+              stop interval=0s timeout=100 (Loadbalancer_HaProxy-stop-interval-0s)
+  Resource: Virtual_IP2 (class=ocf provider=heartbeat type=IPaddr2)
+  Attributes: cidr_netmask=24 ip=10.10.1.1
+  Meta Attrs: resource-stickiness=69
+  Operations: monitor interval=10s timeout=20s (Virtual_IP2-monitor-interval-10s)
+              start interval=0s timeout=20s (Virtual_IP2-start-interval-0s)
+              stop interval=0s timeout=20s (Virtual_IP2-stop-interval-0s)
+  [root@MariaDB-3 ~]#
+  ```
+
+### Hiển thị cấu hình **`Resource`** chỉ định:
+```sh
+pcs resource show resource_id
+```
+  - Ví dụ:
+  ```sh
+  pcs resource show Virtual_IP
+  ```
+  - Kết quả:
+  ```sh
+  [root@MariaDB-3 ~]# pcs resource show Virtual_IP
+  Resource: Virtual_IP (class=ocf provider=heartbeat type=IPaddr2)
+  Attributes: cidr_netmask=24 ip=10.10.13.30
+  Meta Attrs: resource-stickiness=69
+  Operations: monitor interval=30s (Virtual_IP-monitor-interval-30s)
+              start interval=0s timeout=20s (Virtual_IP-start-interval-0s)
+              stop interval=0s timeout=20s (Virtual_IP-stop-interval-0s)
+  [root@MariaDB-3 ~]#
+  ```
+
+## 8. Chỉnh sửa các tham số cụ thể của resource
+### Cú pháp cập nhật cấu hình Resource
+```sh
+pcs resource update resource_id resource_options
+```
+  - Ví dụ:
+```sh
+pcs resource update Virtual_IP cidr_netmask=32
+```
+  - Kết quả:
+```
+ [root@MariaDB-3 ~]# pcs resource show Virtual_IP
+ Resource: Virtual_IP (class=ocf provider=heartbeat type=IPaddr2)
+  Attributes: cidr_netmask=32 ip=10.10.13.30
+  Meta Attrs: resource-stickiness=69
+  Operations: monitor interval=30s (Virtual_IP-monitor-interval-30s)
+              start interval=0s timeout=20s (Virtual_IP-start-interval-0s)
+              stop interval=0s timeout=20s (Virtual_IP-stop-interval-0s)
+[root@MariaDB-3 ~]#
+```
+## 9. Kích hoạt, vô hiệu hóa nhóm các resource
+- Để khởi động một resource
+```sh
+pcs resource enable resource_id
+```
+- Để dừng hoạt động của một resource
+```sh
+pcs resource disable resource_id
+```
+## 10. Xóa các cảnh báo của các resource
+- Trong quá trình các `resource` hoạt động, đôi khi sẽ xuất hiện các cảnh báo lỗi. Và bạn muốn đặt lại trạng thái của nó thì dùng câu lệnh sau để đặt lại toàn bộ trạng thái của `resource` và `failcount` của resource:
+```sh
+pcs resource cleanup resource_id
+```
