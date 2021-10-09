@@ -67,7 +67,9 @@ echo "10.10.13.33 MariaDB-3" >> /etc/hosts
 ```sh
 yum -y install epel-release
 yum update -y
-yum -y install erlang socat wget
+yum -y install socat wget
+cd ~ && wget https://packages.erlang-solutions.com/erlang/rpm/centos/7/x86_64/esl-erlang_24.0.2-1~centos~7_amd64.rpm
+sudo yum -y install esl-erlang_24.0.2-1~centos~7_amd64.rpm
 ```
 ### Bước 6: CMD Log
 ```
@@ -83,9 +85,9 @@ init 6
 
 - Cài đặt
 ```
-wget https://github.com/rabbitmq/rabbitmq-server/releases/download/rabbitmq_v3_6_10/rabbitmq-server-3.6.10-1.el7.noarch.rpm
+wget https://github.com/rabbitmq/rabbitmq-server/releases/download/v3.9.7/rabbitmq-server-3.9.7-1.el7.noarch.rpm
 rpm --import https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
-rpm -Uvh rabbitmq-server-3.6.10-1.el7.noarch.rpm
+sudo yum -y install rabbitmq-server-3.9.7-1.el7.noarch.rpm
 ```
 
 - Start service
@@ -129,14 +131,50 @@ rabbitmqctl cluster_status
 
 ```
 [root@MariaDB-1 ~]# rabbitmqctl cluster_status
-Cluster status of node 'rabbit@MariaDB-1'
-[{nodes,[{disc,['rabbit@MariaDB-1','rabbit@MariaDB-2','rabbit@MariaDB-3']}]},
- {running_nodes,['rabbit@MariaDB-2','rabbit@MariaDB-3','rabbit@MariaDB-1']},
- {cluster_name,<<"rabbit@MariaDB-1">>},
- {partitions,[]},
- {alarms,[{'rabbit@MariaDB-2',[]},
-          {'rabbit@MariaDB-3',[]},
-          {'rabbit@MariaDB-1',[]}]}]
+Cluster status of node rabbit@MariaDB-1 ...
+Basics
+
+Cluster name: rabbit@MariaDB-1
+
+Disk Nodes
+
+rabbit@MariaDB-1
+
+Running Nodes
+
+rabbit@MariaDB-1
+
+Versions
+
+rabbit@MariaDB-1: RabbitMQ 3.9.7 on Erlang 24.0.2
+
+Maintenance status
+
+Node: rabbit@MariaDB-1, status: not under maintenance
+
+Alarms
+
+(none)
+
+Network Partitions
+
+(none)
+
+Listeners
+
+Node: rabbit@MariaDB-1, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-1, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+
+Feature flags
+
+Flag: implicit_default_bindings, state: enabled
+Flag: maintenance_mode_status, state: enabled
+Flag: quorum_queue, state: enabled
+Flag: stream_queue, state: enabled
+Flag: user_limits, state: enabled
+Flag: virtual_host_metadata, state: enabled
+[root@MariaDB-1 ~]#
+
 ```
 
 - Khởi chạy app:
@@ -146,8 +184,8 @@ rabbitmqctl start_app
 ```
 
 ```
-[root@node1 ~]# rabbitmqctl start_app
-Starting node rabbit@MariaDB-1
+[root@MariaDB-1 ~]# rabbitmqctl start_app
+Starting node rabbit@MariaDB-1 ...
 ```
 > ## **`Thực hiên trên Node: MariaDB-2,MariaDB-3`**
 
@@ -174,40 +212,187 @@ rabbitmqctl start_app
 - Kiểm tra trên tất cả các node
 ```
 [root@MariaDB-1 ~]# rabbitmqctl cluster_status
-Cluster status of node 'rabbit@MariaDB-1'
-[{nodes,[{disc,['rabbit@MariaDB-1','rabbit@MariaDB-2','rabbit@MariaDB-3']}]},
- {running_nodes,['rabbit@MariaDB-2','rabbit@MariaDB-3','rabbit@MariaDB-1']},
- {cluster_name,<<"rabbit@MariaDB-1">>},
- {partitions,[]},
- {alarms,[{'rabbit@MariaDB-2',[]},
-          {'rabbit@MariaDB-3',[]},
-          {'rabbit@MariaDB-1',[]}]}]
-[root@MariaDB-1 ~]#
+Cluster status of node rabbit@MariaDB-1 ...
+Basics
+
+Cluster name: rabbit@MariaDB-1
+
+Disk Nodes
+
+rabbit@MariaDB-1
+rabbit@MariaDB-2
+rabbit@MariaDB-3
+
+Running Nodes
+
+rabbit@MariaDB-1
+rabbit@MariaDB-2
+rabbit@MariaDB-3
+
+Versions
+
+rabbit@MariaDB-1: RabbitMQ 3.9.7 on Erlang 24.0.2
+rabbit@MariaDB-2: RabbitMQ 3.9.7 on Erlang 24.0.2
+rabbit@MariaDB-3: RabbitMQ 3.9.7 on Erlang 24.0.2
+
+Maintenance status
+
+Node: rabbit@MariaDB-1, status: not under maintenance
+Node: rabbit@MariaDB-2, status: not under maintenance
+Node: rabbit@MariaDB-3, status: not under maintenance
+
+Alarms
+
+(none)
+
+Network Partitions
+
+(none)
+
+Listeners
+
+Node: rabbit@MariaDB-1, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-1, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+Node: rabbit@MariaDB-2, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-2, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+Node: rabbit@MariaDB-3, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-3, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+
+Feature flags
+
+Flag: implicit_default_bindings, state: enabled
+Flag: maintenance_mode_status, state: enabled
+Flag: quorum_queue, state: enabled
+Flag: stream_queue, state: enabled
+Flag: user_limits, state: enabled
+Flag: virtual_host_metadata, state: enabled
 ```
 
 ```
 [root@MariaDB-2 ~]# rabbitmqctl cluster_status
-Cluster status of node 'rabbit@MariaDB-2'
-[{nodes,[{disc,['rabbit@MariaDB-1','rabbit@MariaDB-2','rabbit@MariaDB-3']}]},
- {running_nodes,['rabbit@MariaDB-1','rabbit@MariaDB-3','rabbit@MariaDB-2']},
- {cluster_name,<<"rabbit@MariaDB-1">>},
- {partitions,[]},
- {alarms,[{'rabbit@MariaDB-1',[]},
-          {'rabbit@MariaDB-3',[]},
-          {'rabbit@MariaDB-2',[]}]}]
+Cluster status of node rabbit@MariaDB-2 ...
+Basics
+
+Cluster name: rabbit@MariaDB-2
+
+Disk Nodes
+
+rabbit@MariaDB-1
+rabbit@MariaDB-2
+rabbit@MariaDB-3
+
+Running Nodes
+
+rabbit@MariaDB-1
+rabbit@MariaDB-2
+rabbit@MariaDB-3
+
+Versions
+
+rabbit@MariaDB-1: RabbitMQ 3.9.7 on Erlang 24.0.2
+rabbit@MariaDB-2: RabbitMQ 3.9.7 on Erlang 24.0.2
+rabbit@MariaDB-3: RabbitMQ 3.9.7 on Erlang 24.0.2
+
+Maintenance status
+
+Node: rabbit@MariaDB-1, status: not under maintenance
+Node: rabbit@MariaDB-2, status: not under maintenance
+Node: rabbit@MariaDB-3, status: not under maintenance
+
+Alarms
+
+(none)
+
+Network Partitions
+
+(none)
+
+Listeners
+
+Node: rabbit@MariaDB-1, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-1, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+Node: rabbit@MariaDB-1, interface: [::], port: 15672, protocol: http, purpose: HTTP API
+Node: rabbit@MariaDB-2, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-2, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+Node: rabbit@MariaDB-2, interface: [::], port: 15672, protocol: http, purpose: HTTP API
+Node: rabbit@MariaDB-3, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-3, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+Node: rabbit@MariaDB-3, interface: [::], port: 15672, protocol: http, purpose: HTTP API
+
+Feature flags
+
+Flag: drop_unroutable_metric, state: disabled
+Flag: empty_basic_get_metric, state: disabled
+Flag: implicit_default_bindings, state: enabled
+Flag: maintenance_mode_status, state: enabled
+Flag: quorum_queue, state: enabled
+Flag: stream_queue, state: enabled
+Flag: user_limits, state: enabled
+Flag: virtual_host_metadata, state: enabled
 [root@MariaDB-2 ~]#
 ```
 
 ```
 [root@MariaDB-3 ~]# rabbitmqctl cluster_status
-Cluster status of node 'rabbit@MariaDB-3'
-[{nodes,[{disc,['rabbit@MariaDB-1','rabbit@MariaDB-2','rabbit@MariaDB-3']}]},
- {running_nodes,['rabbit@MariaDB-2','rabbit@MariaDB-1','rabbit@MariaDB-3']},
- {cluster_name,<<"rabbit@MariaDB-1">>},
- {partitions,[]},
- {alarms,[{'rabbit@MariaDB-2',[]},
-          {'rabbit@MariaDB-1',[]},
-          {'rabbit@MariaDB-3',[]}]}]
+Cluster status of node rabbit@MariaDB-3 ...
+Basics
+
+Cluster name: rabbit@MariaDB-3
+
+Disk Nodes
+
+rabbit@MariaDB-1
+rabbit@MariaDB-2
+rabbit@MariaDB-3
+
+Running Nodes
+
+rabbit@MariaDB-1
+rabbit@MariaDB-2
+rabbit@MariaDB-3
+
+Versions
+
+rabbit@MariaDB-1: RabbitMQ 3.9.7 on Erlang 24.0.2
+rabbit@MariaDB-2: RabbitMQ 3.9.7 on Erlang 24.0.2
+rabbit@MariaDB-3: RabbitMQ 3.9.7 on Erlang 24.0.2
+
+Maintenance status
+
+Node: rabbit@MariaDB-1, status: not under maintenance
+Node: rabbit@MariaDB-2, status: not under maintenance
+Node: rabbit@MariaDB-3, status: not under maintenance
+
+Alarms
+
+(none)
+
+Network Partitions
+
+(none)
+
+Listeners
+
+Node: rabbit@MariaDB-1, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-1, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+Node: rabbit@MariaDB-1, interface: [::], port: 15672, protocol: http, purpose: HTTP API
+Node: rabbit@MariaDB-2, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-2, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+Node: rabbit@MariaDB-2, interface: [::], port: 15672, protocol: http, purpose: HTTP API
+Node: rabbit@MariaDB-3, interface: [::], port: 25672, protocol: clustering, purpose: inter-node and CLI tool communication
+Node: rabbit@MariaDB-3, interface: [::], port: 5672, protocol: amqp, purpose: AMQP 0-9-1 and AMQP 1.0
+Node: rabbit@MariaDB-3, interface: [::], port: 15672, protocol: http, purpose: HTTP API
+
+Feature flags
+
+Flag: drop_unroutable_metric, state: disabled
+Flag: empty_basic_get_metric, state: disabled
+Flag: implicit_default_bindings, state: enabled
+Flag: maintenance_mode_status, state: enabled
+Flag: quorum_queue, state: enabled
+Flag: stream_queue, state: enabled
+Flag: user_limits, state: enabled
+Flag: virtual_host_metadata, state: enabled
 [root@MariaDB-3 ~]#
 ```
 ### Kích hoạt plugin rabbit management
