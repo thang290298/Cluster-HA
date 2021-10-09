@@ -412,4 +412,4 @@ http://IP:15672
 
 Tài khoản: `admin` / `0962012918tT#`
 
-<h3 align="center"><img src="../../Images/Lab/27.png"></h3>
+<h3 align="center"><img src="../../Images/Lab/RabbitMQ.png"></h3>
