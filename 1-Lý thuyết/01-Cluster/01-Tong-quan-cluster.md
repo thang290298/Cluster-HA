@@ -1,4 +1,4 @@
-# High Availability : Tổng quan về Cluster
+# Tổng quan về Cluster
 
 ## Mục lục
 I. [Lời nói đầu](#loinoidau)
