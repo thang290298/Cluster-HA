@@ -55,4 +55,26 @@ Lưu ý:
   - Hai máy chủ web cần phục vụ nội dung giống nhau. Nếu không, người dùng sẽ nhận thông tin không thống nhất (Tùy theo thuật toán cân bằng tải).
   - Nên sử dụng chung database giữ 2 web server.
 
-  ## 3. Layer 7 Load Balancing
+## 3. Layer 7 Load Balancing
+- Đây là phương pháp phức tạp hơn, cân bằng tải sử dụng tầng layer 7 mức request (Tầng ứng dụng - Application layer). Sử dụng bộ cân bằng tại layer 7 sẽ điểu hướng đến các backend khác nhau dựa trên nội dung request
+- Chế độ này cho phép triển khai nhiều Web Server  khác nhau trên cùng domain
+
+<h3 align="center"><img src="../../Images/Cluster/20.png"></h3>
+- Trong hình, nếu người dùng gửi request tới ‘https://blog.cloud365.vn/’, haproxy sẽ điều hướng request tới 1, còn khi người dùng request tới https://blog.cloud365.vn/about/ haproxy sẽ điều hường request tới web-2-backend
+
+# IV. Các thuật toán cân bằng tải
+
+Thuật toán cân bằng tải được sử dụng nhằm mục đích các request và điều hướng đến các server nằm trong `backend` trong quá trình load balancing. HAproxy cung cấp một số thuật toán mặc định
+
+- **`Roundrobin`** : request sẽ được gửi đến theo lượt, đây là thuật toán mặc định sử dụng trên HAProxy
+- **`leastconn`** : Các request sẽ được gửi đến những server có ít kết nối nhất
+- **`Source`** : các request được chuyển đến server băng cách hash IP của người dùng. Phương pháp đảm bảo luôn kết nối đến 1 server
+
+# V. Sticky Sessions
+
+- Một ứng dụng yêu cầu người dùng phải giữ kết nối đế cùng một server thuộc backend, để giữ kết nối giữa 1 client đến 1 server backend có thể sử dụng tùy chọn `sticky sessions`. [Xem thêm](https://www.haproxy.com/blog/load-balancing-affinity-persistence-sticky-sessions-what-you-need-to-know/)
+
+# VI. Health Check
+- `HAProxy` sử dụng **health** check để phát hiện các backend server sẵn sàng xử lý request. Kỹ thuật này sẽ tránh việc loại bỏ server khỏi backend thủ công khi backend server không sẵn sàng. health check sẽ cố gắnh thiết lập kết nối TCP tới server để kiểm tra backend server có sẵn sàng xử lý request.
+
+- Nếu `health check` không thể kết nối tới `server`, nó sẽ tự động loại bỏ server khởi `backend`, các traffic tới sẽ không được `forward` tới server cho đến khi nó có thể thực hiện được `health check`. Nếu tất cả server thuộc backend đều xảy vấn đề, dịch vụ sẽ trở trên không khả dụ (trả lại status code 500) cho đến khi 1 server thuộc backend từ trạng thái không khả dụ chuyển sang trạng thái sẵn sàng.
