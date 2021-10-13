@@ -696,3 +696,6 @@ galera_new_cluster
 systemctl restart mariadb
 systemctl restart haproxy
 ```
+
+systemctl start mariadb
+systemctl start haproxy
