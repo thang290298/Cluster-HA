@@ -139,3 +139,38 @@ backend web_servers
 - `default-server`: Bổ sung tùy chọn cho bất kỳ backend server thuộc `backend` section (VD: health checks, max connections, v.v). Điều này kiến cấu hình dễ dàng hơn khi đọc.
 
 - `server`: Tùy chọn quan trọng nhất trong `backend` section. Tùy chọn đi kèm bao gồm `tên`, `IP:Port`. Có thể dùng domain thay cho IP. Theo ví dụ, tùy chọn `maxconn 20` sẽ được bổ sung vào tất cả backend server, tức mỗi server sẽ chỉ phục vụ 20 kết nối đồng thời.
+
+## 5. Listen
+
+`listen` là sự kết hợp của cả 2 mục `frontend` và `backend`. Vì `listen` kết hợp cả 2 tính năng `backend` `frontend`, nên bạn có thể sử dụng `listen` thay thế các các mục `backend và frontend`.
+
+```
+listen web-backend
+    bind 10.10.10.89:80
+    balance leastconn
+    cookie SERVERID insert indirect nocache
+    mode  http
+    option  forwardfor
+    option  httpchk GET / HTTP/1.0
+    option  httpclose
+    option  httplog
+    timeout  client 3h
+    timeout  server 3h
+    server node1 10.10.10.86:80 weight 1 check cookie s1
+    server node2 10.10.10.87:80 weight 1 check cookie s2
+    server node3 10.10.10.88:80 weight 1 check cookie s3
+```
+
+Cú pháp thường dùng:
+
+```
+listen web-backend:
+
+server node1 10.10.10.86:80 inter <time> rise <number> fall <number>
+```
+
+- `inter`: khoảng thời gian giữa hai lần check liên tiếp.
+
+- `rise`: Số lần kiểm tra backend server thành công trước khi HAProxy đánh giá nó đang hoạt động bình thường và bắt đầu điều hướng request tới.
+
+- `fall`: Số lần kiểm tra backend server bị tính là thất bại trước khi HAProxy đánh giá nó xảy ra sự cố và không điều hướng request tới.
