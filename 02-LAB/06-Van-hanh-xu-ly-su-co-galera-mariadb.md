@@ -33,7 +33,7 @@ systemctl stop mariadb
 
 <h3 align="center"><img src="../Images/Lab/47.png"></h3>
 
-## 1. Trường hợp 2 node xảy ra vấn đề
+## 2. Trường hợp 2 node xảy ra vấn đề
 - Down 2 node MariaDB-1 > MariaDB-2 lần lượt
 ```sh
 systemctl stop mariadb
@@ -203,3 +203,82 @@ Haproxy check phản hồi về `200`
 
 - Bật lại các node bị lỗ bình thường, dịch vụ mariadb trên các node sẽ tự join vào vào cluster
 <h3 align="center"><img src="../Images/Lab/56.png"></h3>
+
+## 3. Trường hợp 3 node xảy ra vấn đề
+### <a name="3antoan">**Down 3 node an toàn**
+Sự cố: Stop các node lần lượt: MariaDB-1 > MariaDB-2 > MariaDB-3
+```sh
+systemctl stop mariadb
+```
+<h3 align="center"><img src="../Images/Lab/57.png"></h3>
+
+- **`Cách xử lý`**: Khởi động lại lần lượt databases trên các node sẽ thông báo lỗi do cluster đã chết
+  <h3 align="center"><img src="../Images/Lab/59.png"></h3>
+  - Kiểm tra giá trị `seqno` trong file `grastate.dat`. Node có giá trị lớn nhất sẽ là node khởi tạo lại cluster.
+  <h3 align="center"><img src="../Images/Lab/58.png"></h3>
+
+Trong bài lab database chưa có sự đọc ghi dữ liệu nên seqno = -1 giống nhau ở các node. Tìm node có seqno lớn nhất để khởi tạo lại cluster.
+
+- Để khởi tạo lại `cluster`, thay đổi giá trị **`safe_to_bootstrap`** bằng `1` và chạy câu lệnh `galera_new_cluster`. Sau khi chạy câu lệnh `galera_new_cluster` cluster sẽ `khởi tạo trở lại`.
+```sh
+sed -i "s/safe_to_bootstrap: 0/safe_to_bootstrap: 1/g" /var/lib/mysql/grastate.dat
+```
+<h3 align="center"><img src="../Images/Lab/60.png"></h3>
+
+- Start lại service 2 node còn lại theo cách thông thường.
+
+<h3 align="center"><img src="../Images/Lab/61.png"></h3>
+<h3 align="center"><img src="../Images/Lab/62.png"></h3>
+
+- Kiểm tra Cluster
+```sh
+mysql -u root -p
+SHOW STATUS LIKE 'wsrep_cluster_size';
+```
+```sh
+[root@MariaDB-1 ~]# mysql -u root -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 120
+Server version: 10.3.31-MariaDB-log MariaDB Server
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> SHOW STATUS LIKE 'wsrep_cluster_size';
++--------------------+-------+
+| Variable_name      | Value |
++--------------------+-------+
+| wsrep_cluster_size | 3     |
++--------------------+-------+
+1 row in set (0.002 sec)
+
+MariaDB [(none)]>
+```
+### **Down 3 node không an toàn `init 0`**
+<h3 align="center"><img src="../Images/Lab/63.png"></h3>
+
+- **`Cách xử lý`**:
+  - Ở trường hợp tốt, trạng thái các Databases được lưu lại, khi các node bật lại Cluster sẽ tự động khôi phục
+  - Ở trường hợp xấu hơn không thể khởi động lại, thực hiện lần vết cụm down sau cùng hoặc chọn 1 node bất kỳ để bật lên. Sẽ có rủi ro mất dữ liệu ở trường hợp này
+
+Sau khi bật cả 3 node theo thứ tự down sau bạt trước
+
+<h3 align="center"><img src="../Images/Lab/64.png"></h3>
+
+```sh
+2021-10-13 22:52:05 0 [Note] WSREP: (7758fc35, 'tcp://0.0.0.0:4567') turning message relay requesting off
+2021-10-13 22:52:17 0 [ERROR] WSREP: failed to open gcomm backend connection: 110: failed to reach primary view: 110 (Connection timed out)
+         at /home/buildbot/buildbot/build/gcomm/src/pc.cpp:connect():160
+2021-10-13 22:52:17 0 [ERROR] WSREP: /home/buildbot/buildbot/build/gcs/src/gcs_core.cpp:gcs_core_open():209: Failed to open backend connection: -110 (Connection timed out)
+2021-10-13 22:52:17 0 [ERROR] WSREP: /home/buildbot/buildbot/build/gcs/src/gcs.cpp:gcs_open():1476: Failed to open channel 'ha_cluster' at 'gcomm://10.10.11.31,10.10.11.32,10.10.11.33': -110 (Connection timed out)
+2021-10-13 22:52:17 0 [ERROR] WSREP: gcs connect failed: Connection timed out
+2021-10-13 22:52:17 0 [ERROR] WSREP: wsrep::connect(gcomm://10.10.11.31,10.10.11.32,10.10.11.33) failed: 7
+2021-10-13 22:52:17 0 [ERROR] Aborting
+```
+ - Thực hiện fix lỗi theo các ở **[`down 3 node an toàn`](#3antoan")**
+ - kết quả:
+ <h3 align="center"><img src="../Images/Lab/65.png"></h3>
+
+ # Phần III. Vận hành
