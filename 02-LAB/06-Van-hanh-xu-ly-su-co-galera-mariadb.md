@@ -281,4 +281,152 @@ Sau khi bật cả 3 node theo thứ tự down sau bạt trước
  - kết quả:
  <h3 align="center"><img src="../Images/Lab/65.png"></h3>
 
- # Phần III. Vận hành
+# Phần III. Vận hành
+## 1. Bổ sung thêm node vào cluster galera mariadb
+### Bước 1: Cài đặt 1 node mới với đấu nối tương tự mô hình, có IP:
+```
+IP Public: 10.10.13.243
+IP Local: 10.10.11.243
+```
+thực hiện cấu hình cơ bản: IP, time, selinux, cmdlog, ...
+### Bước 2: Cập nhật nội dụng file host trên các node cũ và node mới
+```sh
+echo "10.10.13.31 MariaDB-1" >> /etc/hosts
+echo "10.10.13.32 MariaDB-2" >> /etc/hosts
+echo "10.10.13.33 MariaDB-3" >> /etc/hosts
+echo "10.10.13.243 node4" >> /etc/hosts
+```
+### Bước 3: Cài đặt MariaDB và Galera trên node mới
+```sh
+echo '[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.3/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1' >> /etc/yum.repos.d/MariaDB.repo
+yum -y update
+```
+```sh
+yum install -y mariadb mariadb-server
+```
+```sh
+yum install -y galera rsync
+```
+```sh
+systemctl stop mariadb
+```
+>Lưu ý: Không khởi động dịch vụ mariadb sau khi cài (Liên quan tới cấu hình Galera Mariadb)
+
+### Bước 4: Cấu hình Galera Cluster trên node4
+
+```sh
+cp /etc/my.cnf.d/server.cnf /etc/my.cnf.d/server.cnf.bak
+
+echo '[server]
+[mysqld]
+bind-address=10.10.13.243
+
+[galera]
+wsrep_on=ON
+wsrep_provider=/usr/lib64/galera/libgalera_smm.so
+#add your node ips here
+wsrep_cluster_address="gcomm://10.10.11.31,10.10.11.32,10.10.11.33,10.10.11.243"
+binlog_format=row
+default_storage_engine=InnoDB
+innodb_autoinc_lock_mode=2
+#Cluster name
+wsrep_cluster_name="ha_cluster"
+# Allow server to accept connections on all interfaces.
+bind-address=10.10.13.243
+# this server ip, change for each server
+wsrep_node_address="10.10.11.243"
+# this server name, change for each server
+wsrep_node_name="node4"
+wsrep_sst_method=rsync
+[embedded]
+[mariadb]
+[mariadb-10.3]
+' > /etc/my.cnf.d/server.cnf
+```
+- kiểm tra đã nhận đủ IP các node
+> Lưu ý: `wsrep_cluster_address` đầy đủ IP các node
+
+```sh
+[root@node4 ~]# systemctl restart mariadb
+[root@node4 ~]# mysql -u haproxy -e "SHOW STATUS LIKE 'wsrep_incoming_addresses'"
++--------------------------+----------------------------------------------------------------------+
+| Variable_name            | Value                                                                |
++--------------------------+----------------------------------------------------------------------+
+| wsrep_incoming_addresses | 10.10.13.33:3306,10.10.13.31:3306,10.10.13.32:3306,10.10.13.243:3306 |
++--------------------------+----------------------------------------------------------------------+
+[root@node4 ~]#
+```
+Bước 4: Thay đổi config trên các node MariaDB-1,MariaDB-2,MariaDB-3,MariaDB-4
+- Thay đổi settings `wsrep_cluster_address`, điền đẩy đủ IP các node thuộc cluser hiện tại (bổ sung IP node mới), sau đó restart mariadb ở từng node.
+- Bổ sung cấu hình config HAProxy.
+```sh
+global
+    log         127.0.0.1 local2
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     4000
+    user        haproxy
+    group       haproxy
+    daemon
+    stats socket /var/lib/haproxy/stats
+defaults
+    mode                    http
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    option http-server-close
+    option forwardfor       except 127.0.0.0/8
+    option                  redispatch
+    retries                 3
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         10s
+    timeout client          1m
+    timeout server          1m
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 3000
+
+listen stats
+    bind :8080
+    mode http
+    stats enable
+    stats uri /stats
+    stats realm HAProxy\ Statistics
+
+listen galera
+    bind 10.10.13.30:3306
+    balance source
+    mode tcp
+    option tcpka
+    option tcplog
+    option clitcpka
+    option srvtcpka
+    timeout client 28801s
+    timeout server 28801s
+    option mysql-check user haproxy
+    server MariaDB-1 10.10.13.31:3306 check inter 5s fastinter 2s rise 3 fall 3
+    server MariaDB-2 10.10.13.32:3306 check inter 5s fastinter 2s rise 3 fall 3 backup
+    server MariaDB-3 10.10.13.33:3306 check inter 5s fastinter 2s rise 3 fall 3 backup
+    server node4 10.10.13.243:3306 check inter 5s fastinter 2s rise 3 fall 3 backup
+
+listen web-backend
+    bind *:80
+    balance  roundrobin
+    cookie SERVERID insert indirect nocache
+    mode  http
+    option  httpchk
+    option  httpclose
+    option  httplog
+    option  forwardfor
+    server MariaDB-1 10.10.11.31:8081 check cookie node1 inter 5s fastinter 2s rise 3 fall 3
+    server MariaDB-2 10.10.11.32:8081 check cookie node2 inter 5s fastinter 2s rise 3 fall 3
+    server MariaDB-3 10.10.11.33:8081 check cookie node3 inter 5s fastinter 2s rise 3 fall 3
+```
+Kết quả:
+ <h3 align="center"><img src="../Images/Lab/66.png"></h3>
+ 
