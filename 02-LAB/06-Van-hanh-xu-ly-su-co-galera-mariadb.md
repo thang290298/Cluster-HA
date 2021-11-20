@@ -281,6 +281,131 @@ Sau khi bật cả 3 node theo thứ tự down sau bạt trước
  - kết quả:
  <h3 align="center"><img src="../Images/Lab/65.png"></h3>
 
+### Down 3 node không an toàn `tắt nóng Server`**
+
+- Sự cố
+
+Thực hiện force off trên cả 3 node.
+
+
+- Xử lý
+
+Trong trường hợp tốt này trạng thái database sẽ được lưu lại, khi các node hoạt động trở lại Cluster sẽ tự khôi phục.
+
+Trong trường hợp xấu cụm không thể khởi động lại, lần vết cụm down sau cùng (tốt nhất) hoặc chọn 1 node bất kỳ thực hiện, sẽ có rủi ro mất mát dữ liệu. 
+
+Sau khi bật cả 3 node lần lượt lên (node tắt sau cùng trước).
+
+
+Làm theo các bước `Down 3 node an toàn` ở trên nếu không được thực hiện như ở dưới.
+
+Thực hiện trên tất cả các node
+
+```
+pkill -KILL -u mysql
+systemctl stop mariadb
+```
+
+Thực hiện trên một node
+
+```
+vi /var/lib/mysql/grastate.dat
+
+sửa safe_to_bootstrap: 0 -> safe_to_bootstrap: 1
+```
+
+```
+[root@node3 ~]# cat /var/lib/mysql/grastate.dat
+# GALERA saved state
+version: 2.1
+uuid:    bc40f3b7-22c3-11eb-a2d6-f21ad702ac27
+seqno:   -1
+safe_to_bootstrap: 1
+
+[root@node3 ~]#
+```
+
+Tắt dịch vụ mariadb, khôi phục cluster
+
+```
+systemctl stop mariadb
+galera_recovery
+galera_new_cluster
+```
+
+
+Các node còn lại khởi động lại dịch vụ như bình thường
+
+```
+systemctl restart mariadb
+```
+
+
+### 2.4. Trường hợp 4: Khởi động lại Cluster
+
+Trong trường hợp khởi động cluster (restart OS), cluster không hoạt động.
+
+Trong trường hợp xấu cụm không thể khởi động lại, lần vết cụm down sau cùng (tốt nhất, ít rủi ro mất mát dữ liệu) hoặc chọn 1 node bất kỳ thực hiện(sẽ có rủi ro mất mát dữ liệu):
+
+```
+vi /var/lib/mysql/grastate.dat
+
+sửa safe_to_bootstrap: 0 -> safe_to_bootstrap: 1
+```
+
+```
+[root@node3 ~]# cat /var/lib/mysql/grastate.dat
+# GALERA saved state
+version: 2.1
+uuid:    bc40f3b7-22c3-11eb-a2d6-f21ad702ac27
+seqno:   -1
+safe_to_bootstrap: 1
+
+[root@node3 ~]#
+```
+
+Tắt dịch vụ mariadb, khôi phục cluster
+
+```
+systemctl stop mariadb
+galera_recovery
+galera_new_cluster
+```
+
+Kiểm tra dịch vụ
+
+```
+[root@node3 ~]# systemctl status mariadb
+● mariadb.service - MariaDB 10.2.35 database server
+   Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; vendor preset: disabled)
+  Drop-In: /etc/systemd/system/mariadb.service.d
+           └─migrated-from-my.cnf-settings.conf
+   Active: active (running) since Thu 2020-11-12 20:48:15 +07; 9s ago
+     Docs: man:mysqld(8)
+           https://mariadb.com/kb/en/library/systemd/
+  Process: 1920 ExecStartPost=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+  Process: 1782 ExecStartPre=/bin/sh -c [ ! -e /usr/bin/galera_recovery ] && VAR= ||   VAR=`cd /usr/bin/..; /usr/bin/galera_recovery`; [ $? -eq 0 ]   && systemctl set-environment _WSREP_START_POSITION=$VAR || exit 1 (code=exited, status=0/SUCCESS)
+  Process: 1780 ExecStartPre=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+ Main PID: 1882 (mysqld)
+   Status: "Taking your SQL requests now..."
+   CGroup: /system.slice/mariadb.service
+           └─1882 /usr/sbin/mysqld --basedir=/usr --wsrep-new-cluster --wsrep_start_position=bc4...
+
+Nov 12 20:48:13 node3 systemd[1]: Starting MariaDB 10.2.35 database server...
+Nov 12 20:48:15 node3 sh[1782]: WSREP: Recovered position bc40f3b7-22c3-11eb-a2d6-f21ad702ac27:572
+Nov 12 20:48:15 node3 mysqld[1882]: 2020-11-12 20:48:15 139642644900032 [Note] /usr/sbin/mys... ...
+Nov 12 20:48:15 node3 mysqld[1882]: 2020-11-12 20:48:15 139642644900032 [Warning] Could not ...186)
+Nov 12 20:48:15 node3 systemd[1]: Started MariaDB 10.2.35 database server.
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@node3 ~]#
+```
+
+Các node còn lại khởi động lại dịch vụ như bình thường.
+
+```
+systemctl restart mariadb
+```
+
 # Phần III. Vận hành
 ## 1. Bổ sung thêm node vào cluster galera mariadb
 ### Bước 1: Cài đặt 1 node mới với đấu nối tương tự mô hình, có IP:
